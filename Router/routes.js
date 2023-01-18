@@ -2,8 +2,9 @@ import express from "express";
 import { getForm } from "../controllers/getForm.js";
 import { Home } from "../controllers/home.js";
 import { postForm } from "../controllers/postForm.js";
-import formidable from "formidable";
-import path from "path";
+import formidable from "formidable"; 
+import {Image} from "../model/image.schema.js"
+import fs from "fs"
 
 const router = express.Router();
 
@@ -40,7 +41,16 @@ router.post("/mypost", async (req, res) => {
   Now we will parse the request stream containing form data  with the help of the newly created form from formidable parse method, if you will provide the callback function to this then all the fields and files will be collected and those will be passed to the callback function  
    */
 
-  form.parse(req, (err, fields, files) => {
+  form.parse(req, async(err, fields, files) => { 
+    if(err){
+      console.log("Error while parsing files")
+      return res.status(400).json({
+        status: "Fail",
+        message: "There was an error parsing the files",
+        error: err,
+      })
+     }
+
 
     /* 
     if there will be any error while parsing this form data then it will be thrown 
@@ -48,16 +58,23 @@ router.post("/mypost", async (req, res) => {
     files- an array contains multiple files and ech files is an object in itself in it  
     At this point of time your files are parsed and they are stored also in uploadDir folder generally we uses temp folder then doing it in ram .
     */
-   if(err){
-    console.log("Error while parsing files")
-    return res.status(400).json({
-      status: "Fail",
-      message: "There was an error parsing the files",
-      error: err,
-    })
-   }
-    console.log('fields:', fields);
-    console.log('files:', files);
+   
+    // console.log('fields:', fields);
+    // console.log('files:', files);
+
+    const data = fs.readFileSync(files.samplefile.filepath)
+
+    // console.log("data:",data)
+
+    // upload image to mongodb 
+      const uploadedImage= await Image.create({
+        name:files.samplefile.newFilename,
+        image:{
+          data,
+          contentType:"image/png"
+        }
+      })
+     
   });
 
   res.status(200).json({
